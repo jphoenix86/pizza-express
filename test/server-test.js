@@ -4,7 +4,6 @@ const app = require('../server');
 const fixtures = require('./fixtures');
 
 describe('Server', () => {
-
   before(done => {
     this.port = 9876;
     this.server = app.listen(this.port, (err, result) => {
@@ -46,12 +45,19 @@ describe('Server', () => {
     });
   });
 
-  describe('POST /pizzas',() => {
+  describe('POST /pizzas', () => {
     beforeEach(() => {
       app.locals.pizzas = {};
     });
+    it('should not return 404', (done) => {
+      this.request.post('/pizzas', (error, response) => {
+        if (error) { done(error); }
+        assert.notEqual(response.statusCode, 404);
+        done();
+      });
+    });
 
-    it('should receive and store data', (done) => {
+    it('should receive and restore data', (done) => {
       var payload = { pizza: fixtures.validPizza };
 
       this.request.post('/pizzas', { form: payload }, (error, response) => {
@@ -75,6 +81,20 @@ describe('Server', () => {
   });
 
   describe('GET /pizzas/:id', () => {
+    it('should redirect the user to their new pizza', (done) => {
+      var payload = { pizza: fixtures.validPizza };
+
+      this.request.post('/pizzas', { form: payload }, (error, response) => {
+        if (error) { done(error); }
+        var newPizzaId = Object.keys(app.locals.pizzas)[0];
+        assert.equal(response.headers.location, '/pizzas/' + newPizzaId);
+        done();
+      });
+    });
+
+  });
+
+  describe('GET /pizzas/:id', () => {
     beforeEach(() => {
       app.locals.pizzas.testPizza = fixtures.validPizza;
     });
@@ -85,6 +105,7 @@ describe('Server', () => {
         assert.notEqual(response.statusCode, 404);
         done();
       })
+      });
     });
 
     it('should return a page that has the title of the pizza', (done) => {
